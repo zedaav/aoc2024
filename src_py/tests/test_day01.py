@@ -1,4 +1,5 @@
 from aoc2024.day01 import D01Step1Puzzle, D01Step2Puzzle
+
 from tests.base import AOCPuzzleTester
 
 

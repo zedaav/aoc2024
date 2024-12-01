@@ -1,0 +1,8 @@
+{% for src in rustSrcFiles %}
+[[bin]]
+name = "{{src | replace(".rs","") | replace("src_rs/","") }}"
+path = "{{src}}"
+{% endfor %}
+
+[dependencies]
+regex = "1.11.1"

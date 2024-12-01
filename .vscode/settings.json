@@ -9,7 +9,7 @@
     },
     "python.defaultInterpreterPath": "venv/bin/python",
     "python.autoComplete.extraPaths": [
-        "src"
+        "src_py"
     ],
     "cSpell.words": [
         "isort",
@@ -27,7 +27,7 @@
         "buildenv"
     ],
     "python.analysis.extraPaths": [
-        "src"
+        "src_py"
     ],
     "python.testing.pytestEnabled": true,
     "files.watcherExclude": {

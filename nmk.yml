@@ -1,11 +1,19 @@
 refs:
   - pip://nmk-python!plugin.yml
+  - pip://nmk-rust!plugin.yml
   - pip://nmk-vscode!plugin.yml
   - pip://nmk-github!plugin.yml
   - github://dynod/workspace/main/shared/shared.yml
 
 config:
+  # Python things
+  sourceDir: ${PROJECTDIR}/src_py
   pythonMinVersion: "3.10"
   githubPythonVersions: ["${pythonMinVersion}"]
   pytestExtraArgs:
     cov-fail-under: 80
+
+  # Rust things
+  rustSrcFolder: ${PROJECTDIR}/src_rs
+  rustManifestFileFragments:
+    - ${rustSrcFolder}/bins.toml.jinja

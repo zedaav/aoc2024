@@ -4,6 +4,8 @@
         "tamasfe.even-better-toml",
         "charliermarsh.ruff",
         "ms-python.python",
+        "rust-lang.rust-analyzer",
+        "tamasfe.even-better-toml",
         "eamodio.gitlens",
         "streetsidesoftware.code-spell-checker"
     ]

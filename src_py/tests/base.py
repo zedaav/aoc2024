@@ -1,8 +1,7 @@
 from pathlib import Path
 
-from pytest_multilog import TestHelper
-
 from aoc2024.puzzle import AOCPuzzle
+from pytest_multilog import TestHelper
 
 
 # Base class for AOC puzzles tests

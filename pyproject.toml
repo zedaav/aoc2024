@@ -30,7 +30,7 @@ Repository = "https://github.com/dynod/aoc2024"
 Issues = "https://github.com/zedaav/aoc2024/issues?q=is%3Aopen+is%3Aissue"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["src_py"]
 exclude = ["tests"]
 namespaces = false
 
@@ -51,14 +51,14 @@ select = ["E", "F", "UP", "B", "SIM", "I"]
 ignore = ["E203", "E501"]
 
 [tool.pytest.ini_options]
-testpaths = ["src/tests"]
+testpaths = ["src_py/tests"]
 junit_family = "xunit2"
 filterwarnings = ["ignore::DeprecationWarning"]
-addopts = ["--capture=sys", "--junit-xml=out/tests/report.xml", "--cov=src", "--cov-report=html:out/coverage-report", "--cov-report=xml:out/coverage.xml", "--cov-report=term", "--cov-config=pyproject.toml"]
+addopts = ["--capture=sys", "--junit-xml=out/tests/report.xml", "--cov=src_py", "--cov-report=html:out/coverage-report", "--cov-report=xml:out/coverage.xml", "--cov-report=term", "--cov-config=pyproject.toml"]
 
 [tool.coverage.run]
 data_file = "out/.coverage"
 concurrency = ["thread"]
 disable_warnings = ["no-data-collected"]
 branch = true
-omit = ["src/tests/*"]
+omit = ["src_py/tests/*"]
