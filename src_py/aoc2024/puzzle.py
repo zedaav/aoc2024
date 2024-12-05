@@ -9,6 +9,10 @@ class Direction(IntEnum):
     E = auto()
     S = auto()
     W = auto()
+    NE = auto()
+    SE = auto()
+    SW = auto()
+    NW = auto()
 
 
 # Opposite directions
@@ -22,9 +26,13 @@ OPPOSITE = {
 # Offsets
 OFFSETS = {
     Direction.N: (0, -1),
+    Direction.NE: (1, -1),
     Direction.E: (1, 0),
+    Direction.SE: (1, 1),
     Direction.S: (0, 1),
+    Direction.SW: (-1, 1),
     Direction.W: (-1, 0),
+    Direction.NW: (-1, -1),
 }
 
 
