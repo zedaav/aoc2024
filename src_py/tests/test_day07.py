@@ -9,7 +9,6 @@ class TestD07(AOCPuzzleTester):
 
     def test_step1_input(self):
         self.check_solution(D07Step1Puzzle, "d07.input.txt", 3351424677624)
-        # 3351424677624
 
     def test_step2_sample(self):
         self.check_solution(D07Step2Puzzle, "d07.sample.txt", 11387)
