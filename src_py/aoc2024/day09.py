@@ -7,8 +7,6 @@ from aoc2024.puzzle import AOCPuzzle
 Solutions for https://adventofcode.com/2024/day/9
 """
 
-# https://www.reddit.com/r/adventofcode/comments/1ha27bo/comment/m15wwre/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
-
 
 @dataclass
 class File:

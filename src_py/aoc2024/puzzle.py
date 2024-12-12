@@ -15,6 +15,9 @@ class Direction(IntEnum):
     NW = auto()
 
 
+# Cardinal directions
+CARDINAL_DIRS = [Direction.N, Direction.E, Direction.S, Direction.W]
+
 # Opposite directions
 OPPOSITE = {
     Direction.N: Direction.S,

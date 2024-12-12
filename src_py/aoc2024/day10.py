@@ -3,13 +3,11 @@ from collections import defaultdict
 from pathlib import Path
 from queue import Queue
 
-from aoc2024.puzzle import OFFSETS, AOCPuzzle, Direction
+from aoc2024.puzzle import CARDINAL_DIRS, OFFSETS, AOCPuzzle
 
 """
 Solutions for https://adventofcode.com/2024/day/10
 """
-
-CARDINAL_DIRS = [Direction.N, Direction.E, Direction.S, Direction.W]
 
 
 class D10Puzzle(AOCPuzzle):
