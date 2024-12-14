@@ -9,5 +9,9 @@ authors = ["The dynod project"]
 name = "day01"
 path = "src_rs/day01.rs"
 
+[[bin]]
+name = "day14"
+path = "src_rs/day14.rs"
+
 [dependencies]
 regex = "1.11.1"
