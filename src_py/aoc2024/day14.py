@@ -76,13 +76,18 @@ class D14Step1Puzzle(D14Puzzle):
 class D14Step2Puzzle(D14Puzzle):
     def solve(self, out_folder: Path) -> int:
         w, h = 101, 103
-        expected_len = len(self.robots)
         i = 0
         while True:
             i += 1
-            plots = set(r.move(i, (w, h)) for r in self.robots)
-            if len(plots) == expected_len:
-                # Each robot is on a unique plot; draw picture
+            plots = set()
+            for r in self.robots:
+                x, y = r.move(i, (w, h))
+                if (x, y) in plots:
+                    # Detected a duplicate, give up
+                    break
+                plots.add((x, y))
+            else:
+                # Loop elapsed completely: each robot is on a unique plot; draw picture
                 map = [["."] * w for _ in range(h)]
                 for x, y in plots:
                     map[y][x] = "x"

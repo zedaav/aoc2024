@@ -82,18 +82,25 @@ fn step2(template: &str, dims: (i32, i32)) {
     let robots = parse(template, dims);
 
     // Iterate on robots
-    let expected_size = robots.len();
     let mut i = 0;
     loop {
         i += 1;
 
         // Move all and keep positions in a set
+        let mut duplicate = false;
         let mut plots: HashSet<(i32, i32)> = HashSet::new();
         for r in &robots {
             let (x, y) = r.mv(i);
+            if plots.contains(&(x, y)) {
+                // Give up as soon as we get a duplicate
+                duplicate = true;
+                break;
+            }
             plots.insert((x, y));
         }
-        if plots.len() == expected_size {
+
+        // If we get here without having detected a duplicate, we're done
+        if !duplicate {
             break;
         }
     }
