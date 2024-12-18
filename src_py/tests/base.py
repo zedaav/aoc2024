@@ -13,9 +13,9 @@ class AOCPuzzleTester(TestHelper):
         return self.INPUTS_ROOT / name
 
     # Test puzzle solution
-    def check_solution(self, puzzle: type[AOCPuzzle], input_name: str, expected_solution: int, solve_arg=None):
+    def check_solution(self, puzzle: type[AOCPuzzle], input_name: str, expected_solution: int, solve_arg=None, puzzle_kwargs: dict = None):
         # Solve puzzle
-        p = puzzle(self.get_input(input_name))
+        p = puzzle(self.get_input(input_name)) if puzzle_kwargs is None else puzzle(self.get_input(input_name), **puzzle_kwargs)
         solution = p.solve() if solve_arg is None else p.solve(solve_arg)
 
         # Verify solution
