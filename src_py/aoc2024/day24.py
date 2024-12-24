@@ -1,7 +1,9 @@
 import logging
 import re
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from itertools import combinations
 from pathlib import Path
 
 from aoc2024.puzzle import AOCPuzzle
@@ -35,9 +37,10 @@ class InputPin(Pin):
 # Gate output pin
 @dataclass
 class GateOutputPin(Pin, ABC):
+    name: str
     _a_pin_name: str
     _b_pin_name: str
-    _all_pins: dict[str, Pin]
+    _all_pins: dict[str, Pin] = field(default_factory=dict)
     _a_pin: Pin | None = None
     _b_pin: Pin | None = None
 
@@ -80,11 +83,63 @@ class XorGateOutputPin(GateOutputPin):
         return self.a.value ^ self.b.value
 
 
+# Computer system, holding all pins
+@dataclass
+class Computer:
+    _all_pins: dict[str, Pin]
+
+    def __post_init__(self):
+        # Inject the pins map in all gate output pins
+        for pin in self._all_pins.values():
+            if isinstance(pin, GateOutputPin):
+                pin._all_pins = self._all_pins
+
+    def _width(self, prefix: str) -> int:
+        return max(map(lambda x: int(x[1:]), filter(lambda x: x.startswith(prefix), self._all_pins.keys()))) + 1
+
+    def __repr__(self) -> str:
+        return f"computer with {len(self._all_pins)} pins ({len(self.gates)} gates), {self.x_width} bits x {self.y_width} bits inputs, and {self.z_width} bits output"
+
+    @property
+    def x_width(self) -> int:
+        return self._width("x")
+
+    @property
+    def y_width(self) -> int:
+        return self._width("y")
+
+    @property
+    def z_width(self) -> int:
+        return self._width("z")
+
+    @property
+    def gates(self) -> list[GateOutputPin]:
+        return [pin for pin in self._all_pins.values() if isinstance(pin, GateOutputPin)]
+
+    def _int(self, prefix: str) -> int:
+        result = 0
+        for x_name, x_pin in filter(lambda x: x[0].startswith(prefix), self._all_pins.items()):
+            result |= int(x_pin.value) << int(x_name[1:])
+        return result
+
+    def compute(self):
+        return self._int("z")
+
+    @property
+    def x(self) -> int:
+        return self._int("x")
+
+    @property
+    def y(self) -> int:
+        return self._int("y")
+
+
 class D24Puzzle(AOCPuzzle):
     def __init__(self, input_file: Path):
         self.all_pins: dict[str, Pin] = {}
         super().__init__(input_file)
-        logging.info(f"pins: {len(self.all_pins)}")
+        self.default_computer = Computer(self.all_pins.copy())
+        logging.info(f"default: {self.default_computer}")
 
     def parse_line(self, index: int, line: str) -> str:
         line = super().parse_line(index, line)
@@ -97,24 +152,37 @@ class D24Puzzle(AOCPuzzle):
             if m:
                 a_pin_name, operation, b_pin_name, output_pin_name = m.groups()
                 if operation == "AND":
-                    self.all_pins[output_pin_name] = AndGateOutputPin(a_pin_name, b_pin_name, self.all_pins)
+                    self.all_pins[output_pin_name] = AndGateOutputPin(output_pin_name, a_pin_name, b_pin_name)
                 elif operation == "OR":
-                    self.all_pins[output_pin_name] = OrGateOutputPin(a_pin_name, b_pin_name, self.all_pins)
+                    self.all_pins[output_pin_name] = OrGateOutputPin(output_pin_name, a_pin_name, b_pin_name)
                 elif operation == "XOR":
-                    self.all_pins[output_pin_name] = XorGateOutputPin(a_pin_name, b_pin_name, self.all_pins)
+                    self.all_pins[output_pin_name] = XorGateOutputPin(output_pin_name, a_pin_name, b_pin_name)
                 else:
                     raise ValueError(f"Unknown operation: {operation}")
 
 
 class D24Step1Puzzle(D24Puzzle):
     def solve(self) -> int:
-        # Iterate on pin names starting with "z"
-        result = 0
-        for z_pin in filter(lambda x: x.startswith("z"), self.all_pins.keys()):
-            result |= self.all_pins[z_pin].value << int(z_pin[1:])
-        return result
+        # Run the default computer
+        return self.default_computer.compute()
 
 
 class D24Step2Puzzle(D24Puzzle):
-    def solve(self) -> int:
-        return 0
+    def solve(self, args: tuple[int, Callable]) -> str:
+        n, check = args
+
+        # Iterate on all gates combinations of N pairs (with no duplicates)
+        gates_names = [g.name for g in self.default_computer.gates]
+        pairs = list(combinations(gates_names, 2))
+        for combo in filter(lambda c: len([a for b in c for a in b]) == len(set(a for b in c for a in b)), combinations(pairs, n)):
+            # Build a new computer with swapped gates
+            logging.debug(f"Trying {combo}")
+
+            # Copy the default computer, and swap gates
+            computer_candidate = Computer(self.all_pins.copy())
+            for a, b in combo:
+                computer_candidate._all_pins[a], computer_candidate._all_pins[b] = computer_candidate._all_pins[b], computer_candidate._all_pins[a]
+
+            # Check if the new computer is valid, by testing the output
+            if computer_candidate.compute() == check(computer_candidate.x, computer_candidate.y):
+                return ",".join(sorted([a for b in combo for a in b]))
