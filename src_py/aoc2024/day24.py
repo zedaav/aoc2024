@@ -1,9 +1,7 @@
 import logging
 import re
 from abc import ABC, abstractmethod
-from collections.abc import Callable
 from dataclasses import dataclass, field
-from itertools import combinations
 from pathlib import Path
 
 from aoc2024.puzzle import AOCPuzzle
@@ -87,6 +85,10 @@ class XorGateOutputPin(GateOutputPin):
 @dataclass
 class Computer:
     _all_pins: dict[str, Pin]
+    _x: int | None = None
+    _y: int | None = None
+    _z: int | None = None
+    _cached_pins_per_op: dict[tuple[str, str, type[GateOutputPin]], str] = field(default_factory=dict)
 
     def __post_init__(self):
         # Inject the pins map in all gate output pins
@@ -123,23 +125,47 @@ class Computer:
         return result
 
     def compute(self):
-        return self._int("z")
+        if self._z is None:
+            self._z = self._int("z")
+        return self._z
 
     @property
     def x(self) -> int:
-        return self._int("x")
+        if self._x is None:
+            self._x = self._int("x")
+        return self._x
 
     @property
     def y(self) -> int:
-        return self._int("y")
+        if self._y is None:
+            self._y = self._int("y")
+        return self._y
+
+    def find_gate(self, a_pin_name: str, b_pin_name: str, gate_type: type[GateOutputPin]) -> str:
+        for pin in self.gates:
+            if isinstance(pin, gate_type) and (
+                (pin._a_pin_name == a_pin_name and pin._b_pin_name == b_pin_name) or (pin._a_pin_name == b_pin_name and pin._b_pin_name == a_pin_name)
+            ):
+                return pin.name
+
+        return None
+
+    def swap(self, a_pin_name: str, b_pin_name: str):
+        a_pin = self._all_pins[a_pin_name]
+        b_pin = self._all_pins[b_pin_name]
+        self._all_pins[a_pin_name] = b_pin
+        self._all_pins[b_pin_name] = a_pin
+        a_pin.name = b_pin_name
+        b_pin.name = a_pin_name
+        self._z = None
 
 
 class D24Puzzle(AOCPuzzle):
     def __init__(self, input_file: Path):
         self.all_pins: dict[str, Pin] = {}
         super().__init__(input_file)
-        self.default_computer = Computer(self.all_pins.copy())
-        logging.info(f"default: {self.default_computer}")
+        self.computer = Computer(self.all_pins)
+        logging.info(f"default: {self.computer}")
 
     def parse_line(self, index: int, line: str) -> str:
         line = super().parse_line(index, line)
@@ -164,25 +190,61 @@ class D24Puzzle(AOCPuzzle):
 class D24Step1Puzzle(D24Puzzle):
     def solve(self) -> int:
         # Run the default computer
-        return self.default_computer.compute()
+        return self.computer.compute()
 
 
 class D24Step2Puzzle(D24Puzzle):
-    def solve(self, args: tuple[int, Callable]) -> str:
-        n, check = args
+    def solve(self) -> str:
+        # Expected result
+        expected_result = self.computer.x + self.computer.y
+        current_result = self.computer.compute()
+        logging.info(f"expected: {expected_result} ({bin(expected_result)}), current: {current_result} ({bin(current_result)})")
 
-        # Iterate on all gates combinations of N pairs (with no duplicates)
-        gates_names = [g.name for g in self.default_computer.gates]
-        pairs = list(combinations(gates_names, 2))
-        for combo in filter(lambda c: len([a for b in c for a in b]) == len(set(a for b in c for a in b)), combinations(pairs, n)):
-            # Build a new computer with swapped gates
-            logging.debug(f"Trying {combo}")
+        # Iterate on all bits
+        wrong_gates = set()
+        carry = None
+        for i in range(self.computer.z_width):
+            # Main inputs and output for this iteration
+            x = f"x{i:02}"
+            y = f"y{i:02}"
+            z = f"z{i:02}"
 
-            # Copy the default computer, and swap gates
-            computer_candidate = Computer(self.all_pins.copy())
-            for a, b in combo:
-                computer_candidate._all_pins[a], computer_candidate._all_pins[b] = computer_candidate._all_pins[b], computer_candidate._all_pins[a]
+            # Find base gates for inputs
+            x_xor_y = self.computer.find_gate(x, y, XorGateOutputPin)
+            x_and_y = self.computer.find_gate(x, y, AndGateOutputPin)
 
-            # Check if the new computer is valid, by testing the output
-            if computer_candidate.compute() == check(computer_candidate.x, computer_candidate.y):
-                return ",".join(sorted([a for b in combo for a in b]))
+            # Check if carry is known at this level
+            if not carry:
+                # Not yet (first level); nothing more to do
+                carry = x_and_y
+                continue
+
+            # Check for a XOR gate between carry and x_xor_y
+            candidate_xor = self.computer.find_gate(carry, x_xor_y, XorGateOutputPin)
+            if candidate_xor is None:
+                # Not found: check missing wires
+                z_gate = self.computer._all_pins[z]
+                bad_wires = list(set([carry, x_xor_y]) ^ set([z_gate._a_pin_name, z_gate._b_pin_name]))
+                if len(bad_wires) == 2:
+                    a, b = bad_wires
+                    logging.info(f"bit {i}: wrong pins: {a} and {b}")
+                    wrong_gates.add(a)
+                    wrong_gates.add(b)
+                    self.computer.swap(a, b)
+            elif candidate_xor != z:
+                # Not correctly wired
+                logging.info(f"bit {i}: wrong pins: {z} and {candidate_xor}")
+                wrong_gates.add(z)
+                wrong_gates.add(candidate_xor)
+                self.computer.swap(z, candidate_xor)
+
+            # Update base gates for inputs
+            x_xor_y = self.computer.find_gate(x, y, XorGateOutputPin)
+            x_and_y = self.computer.find_gate(x, y, AndGateOutputPin)
+
+            # Update carry
+            carry = self.computer.find_gate(carry, x_xor_y, AndGateOutputPin)
+            carry = self.computer.find_gate(carry, x_and_y, OrGateOutputPin)
+
+        # Just print wrong gates
+        return ",".join(sorted(wrong_gates))
